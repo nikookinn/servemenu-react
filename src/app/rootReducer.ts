@@ -1,13 +1,12 @@
 import { combineReducers } from '@reduxjs/toolkit';
 import landingReducer from '../features/landing/store/landingSlice';
+import dashboardReducer from '../features/dashboard/store/dashboardSlice';
 
-export const rootReducer = combineReducers({
+const rootReducer = combineReducers({
   landing: landingReducer,
-  // Future feature reducers will be added here
+  dashboard: dashboardReducer,
+  // Add other feature reducers here as they are created
   // auth: authReducer,
-  // dashboard: dashboardReducer,
-  // menu: menuReducer,
-  // qr: qrReducer,
-  // analytics: analyticsReducer,
-  // settings: settingsReducer,
 });
+
+export default rootReducer;

@@ -53,7 +53,7 @@ const QRMenuInterface: React.FC = () => {
         <Box
           sx={{
             background: 'linear-gradient(180deg, #111111 0%, #0a0a0a 100%)',
-            pt: 6,
+            pt: 7,
             px: 3,
             pb: 3,
             textAlign: 'center',
@@ -350,21 +350,29 @@ const QRMenuInterface: React.FC = () => {
       <Box
         sx={{
           position: 'absolute',
-          bottom: 20,
-          left: 20,
-          right: 20,
+          bottom: { xs: 15, sm: 20 },
+          left: { xs: 10, sm: 20 },
+          right: { xs: 10, sm: 20 },
           backgroundColor: '#000',
-          borderRadius: 2,
-          p: 2,
+          borderRadius: { xs: 1.5, sm: 2 },
+          p: { xs: 1.5, sm: 2 },
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           boxShadow: '0 10px 30px rgba(16, 185, 129, 0.4)',
+          minHeight: { xs: '60px', sm: 'auto' },
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <ShoppingCartIcon sx={{ color: 'white', fontSize: '1.2rem' }} />
-          <Typography sx={{ color: 'white', fontWeight: 600, fontSize: '0.9rem' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.8, sm: 1 }, flex: 1 }}>
+          <ShoppingCartIcon sx={{ color: 'white', fontSize: { xs: '1.1rem', sm: '1.2rem' } }} />
+          <Typography sx={{ 
+            color: 'white', 
+            fontWeight: 600, 
+            fontSize: { xs: '0.85rem', sm: '0.9rem' },
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
             {cartCount} items • ${cartTotal.toFixed(2)}
           </Typography>
         </Box>
@@ -377,11 +385,13 @@ const QRMenuInterface: React.FC = () => {
             backgroundColor: '#f59e0b',
             color: 'white',
             fontWeight: 700,
-            fontSize: '0.8rem',
-            px: 2,
-            py: 1,
-            borderRadius: 1,
+            fontSize: { xs: '0.75rem', sm: '0.8rem' },
+            px: { xs: 1.5, sm: 2 },
+            py: { xs: 0.8, sm: 1 },
+            borderRadius: { xs: 0.8, sm: 1 },
             cursor: 'pointer',
+            minWidth: { xs: '80px', sm: 'auto' },
+            flexShrink: 0,
             '&:hover': {
               backgroundColor: '#d97706',
               transform: 'scale(1.05)',
