@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import {
   Add,
-  Restaurant,
+  MenuBook,
 } from '@mui/icons-material';
 import { useDashboardTheme } from '../../context/ThemeContext';
 
@@ -48,7 +48,7 @@ const MenuEmptyState: React.FC<MenuEmptyStateProps> = ({ onAddMenu }) => {
           border: `2px solid ${mode === 'dark' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(79, 70, 229, 0.2)'}`,
         }}
       >
-        <Restaurant
+        <MenuBook
           sx={{
             fontSize: 40,
             color: theme.palette.primary.main,

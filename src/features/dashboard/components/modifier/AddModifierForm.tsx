@@ -33,23 +33,32 @@ interface AddModifierFormProps {
     allowMultiple: boolean;
     options: ModifierOption[];
   }) => void;
+  editMode?: boolean;
+  initialData?: {
+    name: string;
+    type: 'optional' | 'required';
+    allowMultiple: boolean;
+    options: ModifierOption[];
+  };
 }
 
 export interface AddModifierFormRef {
   save: () => void;
 }
 
-const AddModifierForm = forwardRef<AddModifierFormRef, AddModifierFormProps>(({ onSave }, ref) => {
+const AddModifierForm = forwardRef<AddModifierFormRef, AddModifierFormProps>(({ onSave, editMode = false, initialData }, ref) => {
   const theme = useTheme();
   const { mode } = useDashboardTheme();
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'optional' as 'optional' | 'required',
-    allowMultiple: false,
+    name: initialData?.name || '',
+    type: initialData?.type || 'optional' as 'optional' | 'required',
+    allowMultiple: initialData?.allowMultiple || false,
   });
-  const [options, setOptions] = useState<ModifierOption[]>([
-    { id: '1', name: '', price: '', unit: '' }
-  ]);
+  const [options, setOptions] = useState<ModifierOption[]>(
+    initialData?.options && initialData.options.length > 0 
+      ? initialData.options 
+      : [{ id: '1', name: '', price: '', unit: '' }]
+  );
   const [errors, setErrors] = useState({
     name: '',
     options: '',
@@ -176,7 +185,7 @@ const AddModifierForm = forwardRef<AddModifierFormRef, AddModifierFormProps>(({ 
                 fontSize: '1.1rem',
               }}
             >
-              Add New Modifier
+              {editMode ? 'Edit Modifier' : 'Add New Modifier'}
             </Typography>
             <Typography
               variant="body2"
@@ -186,7 +195,7 @@ const AddModifierForm = forwardRef<AddModifierFormRef, AddModifierFormProps>(({ 
                 mt: 0.5,
               }}
             >
-              Create modifier options for menu items
+              {editMode ? 'Update your modifier details below' : 'Create modifier options for menu items'}
             </Typography>
           </Box>
           
@@ -232,7 +241,7 @@ const AddModifierForm = forwardRef<AddModifierFormRef, AddModifierFormProps>(({ 
               transition: 'all 0.3s ease',
             }}
           >
-            Save Modifier
+            {editMode ? 'Update Modifier' : 'Save Modifier'}
           </Button>
         </Box>
 

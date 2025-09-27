@@ -14,10 +14,12 @@ import {
   ContentCopy,
   QrCode,
   Visibility,
+  ArrowBack,
+  ChevronRight,
 } from '@mui/icons-material';
 import { useDashboardTheme } from '../../context/ThemeContext';
 import { AddMenuForm, MenuCard, MenuEmptyState, AddNewMenuCard, useMenuManagement } from '../menu';
-import { AddModifierForm, AddModifierFormRef, ModifierDeleteConfirmationDialog, ModifierCard, AddNewModifierCard, ModifierEmptyState, useModifierManagement } from '../modifier';
+import { AddModifierForm, AddModifierFormRef, ModifierDeleteConfirmationDialog, ModifierCard, ModifierEmptyState, useModifierManagement } from '../modifier';
 import MenuDeleteConfirmationDialog from '../menu/DeleteConfirmationDialog';
 import { ArchivedItemsList, useArchivedItems, PermanentDeleteDialog } from '../archived';
 
@@ -32,6 +34,7 @@ const MenuManagementPage: React.FC = () => {
   const { 
     menus, 
     currentView: menuCurrentView, 
+    editingMenu,
     handleAddNewMenu, 
     handleBackToList: handleBackToMenuList, 
     handleSaveMenu, 
@@ -69,6 +72,14 @@ const MenuManagementPage: React.FC = () => {
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+    
+    // Reset all form states when switching tabs
+    if (menuCurrentView !== 'list') {
+      handleBackToMenuList(); // Reset menu form state
+    }
+    if (currentView !== 'list') {
+      setCurrentView('list'); // Reset modifier form state
+    }
   };
   const handleEdit = (id: string) => {
     if (activeTab === 0) {
@@ -196,22 +207,21 @@ const MenuManagementPage: React.FC = () => {
     }
   };
 
-  const handleAddNewModifier = () => {
-    setCurrentView('addModifier');
-  };
 
-  const handleSaveModifierWrapper = (modifierData: {
-    name: string;
-    type: 'optional' | 'required';
-    allowMultiple: boolean;
-    options: any[];
-  }) => {
-    handleSaveModifier(modifierData);
-    setCurrentView('list');
-  };
 
   // Use modifier management hook
-  const { modifiers, handleEdit: handleModifierEdit, handleDelete: handleModifierDelete, handleDuplicate: handleModifierDuplicate, handleSaveModifier, restoreModifier } = useModifierManagement();
+  const { 
+    modifiers, 
+    currentView: modifierCurrentView,
+    editingModifier,
+    handleAddNewModifier,
+    handleBackToList: handleBackToModifierList,
+    handleEdit: handleModifierEdit, 
+    handleDelete: handleModifierDelete, 
+    handleDuplicate: handleModifierDuplicate, 
+    handleSaveModifier, 
+    restoreModifier 
+  } = useModifierManagement();
   
   // Use archived items hook
   const { items: archivedItems, addArchivedItem, restoreArchivedItem, permanentlyDeleteItem } = useArchivedItems();
@@ -229,7 +239,7 @@ const MenuManagementPage: React.FC = () => {
     <Box>
       {/* Header Section with Action Buttons */}
       <Box sx={{ 
-        mb: 4, 
+        mb: 2, 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: { xs: 'center', md: 'flex-start' },
@@ -405,13 +415,14 @@ const MenuManagementPage: React.FC = () => {
 
       {/* Add New Button / Back Button with Breadcrumb */}
       <Box sx={{ mb: 4 }}>
-        {menuCurrentView === 'add' ? (
+        {menuCurrentView === 'add' || menuCurrentView === 'edit' ? (
           /* Back Button with Breadcrumb for Menu */
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button
+              startIcon={<ArrowBack />}
               variant="outlined"
               size="large"
-              onClick={handleBackToList}
+              onClick={handleBackToMenuList}
               sx={{
                 textTransform: 'none',
                 fontWeight: 600,
@@ -429,34 +440,20 @@ const MenuManagementPage: React.FC = () => {
                 transition: 'all 0.3s ease',
               }}
             >
-              ← Back to Menus
+              Back to Menus
             </Button>
             
             {/* Breadcrumb */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                component="button"
-                onClick={handleBackToList}
-                sx={{
-                  color: theme.palette.text.secondary,
-                  textDecoration: 'none',
-                  fontWeight: 500,
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  border: 'none',
-                  background: 'none',
-                  padding: 0,
-                  '&:hover': {
-                    color: theme.palette.primary.main,
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography sx={{ color: theme.palette.text.secondary, fontSize: '1rem' }}>
                 Menus
               </Typography>
-              <Typography sx={{ color: theme.palette.text.secondary, fontSize: '1rem' }}>
-                /
-              </Typography>
+              <ChevronRight 
+                sx={{ 
+                  color: theme.palette.text.secondary, 
+                  fontSize: '1.2rem'
+                }} 
+              />
               <Typography
                 sx={{
                   color: theme.palette.text.primary,
@@ -464,17 +461,18 @@ const MenuManagementPage: React.FC = () => {
                   fontSize: '1rem',
                 }}
               >
-                Add New Menu
+                {menuCurrentView === 'edit' ? 'Edit Menu' : 'Add New Menu'}
               </Typography>
             </Box>
           </Box>
-        ) : currentView === 'addModifier' ? (
+        ) : modifierCurrentView === 'add' || modifierCurrentView === 'edit' ? (
           /* Back Button with Breadcrumb for Modifier */
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button
+              startIcon={<ArrowBack />}
               variant="outlined"
               size="large"
-              onClick={handleBackToList}
+              onClick={handleBackToModifierList}
               sx={{
                 textTransform: 'none',
                 fontWeight: 600,
@@ -492,11 +490,11 @@ const MenuManagementPage: React.FC = () => {
                 transition: 'all 0.3s ease',
               }}
             >
-              ← Back to Modifiers
+              Back to Modifiers
             </Button>
             
             {/* Breadcrumb */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography
                 component="button"
                 onClick={handleBackToList}
@@ -517,9 +515,12 @@ const MenuManagementPage: React.FC = () => {
               >
                 Modifiers
               </Typography>
-              <Typography sx={{ color: theme.palette.text.secondary, fontSize: '1rem' }}>
-                /
-              </Typography>
+              <ChevronRight 
+                sx={{ 
+                  color: theme.palette.text.secondary, 
+                  fontSize: '1.2rem'
+                }} 
+              />
               <Typography
                 sx={{
                   color: theme.palette.text.primary,
@@ -527,7 +528,7 @@ const MenuManagementPage: React.FC = () => {
                   fontSize: '1rem',
                 }}
               >
-                Add New Modifier
+                {modifierCurrentView === 'edit' ? 'Edit Modifier' : 'Add New Modifier'}
               </Typography>
             </Box>
           </Box>
@@ -572,11 +573,34 @@ const MenuManagementPage: React.FC = () => {
         <AddMenuForm
           onSave={handleSaveMenu}
         />
-      ) : currentView === 'addModifier' ? (
+      ) : menuCurrentView === 'edit' ? (
+        /* Edit Menu Form */
+        <AddMenuForm
+          onSave={handleSaveMenu}
+          editMode={true}
+          initialData={{
+            name: editingMenu?.name || '',
+            description: editingMenu?.description || ''
+          }}
+        />
+      ) : modifierCurrentView === 'add' ? (
         /* Add Modifier Form */
         <AddModifierForm
           ref={addModifierFormRef}
-          onSave={handleSaveModifierWrapper}
+          onSave={handleSaveModifier}
+        />
+      ) : modifierCurrentView === 'edit' ? (
+        /* Edit Modifier Form */
+        <AddModifierForm
+          ref={addModifierFormRef}
+          onSave={handleSaveModifier}
+          editMode={true}
+          initialData={{
+            name: editingModifier?.name || '',
+            type: editingModifier?.type || 'optional',
+            allowMultiple: editingModifier?.allowMultiple || false,
+            options: editingModifier?.options || []
+          }}
         />
       ) : (
         <>
@@ -587,41 +611,49 @@ const MenuManagementPage: React.FC = () => {
               onRestore={handleRestore}
               onDelete={handlePermanentDelete}
             />
-          ) : (
-            /* Content Grid for Menus and Modifiers */
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+          ) : activeTab === 1 ? (
+            /* Modifier List View - Archive Style */
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {getCurrentData().map((item: any) => (
-                <Box key={item.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(33.33% - 16px)', lg: '1 1 calc(25% - 18px)' } }}>
-                  {activeTab === 1 ? (
-                    <ModifierCard
-                      {...item}
-                      onEdit={handleModifierEdit}
-                      onDelete={handleDelete}
-                      onDuplicate={handleModifierDuplicate}
-                    />
-                  ) : (
-                    <MenuCard
-                      {...item}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onDuplicate={handleDuplicate}
-                    />
-                  )}
-                </Box>
+                <ModifierCard
+                  key={item.id}
+                  {...item}
+                  onEdit={handleModifierEdit}
+                  onDelete={handleDelete}
+                  onDuplicate={handleModifierDuplicate}
+                />
+              ))}
+            </Box>
+          ) : (
+            /* Menu Grid View */
+            <Box 
+              sx={{ 
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, 1fr)',
+                  md: 'repeat(3, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                  xl: 'repeat(4, 1fr)',
+                },
+                gap: 2.5,
+                width: '100%',
+                maxWidth: '1400px',
+              }}
+            >
+              {getCurrentData().map((item: any) => (
+                <MenuCard
+                  key={item.id}
+                  {...item}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                />
               ))}
               
-              {/* Add New Card - Always visible when there are items */}
-              {activeTab === 0 && getCurrentData().length > 0 && (
-                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(33.33% - 16px)', lg: '1 1 calc(25% - 18px)' } }}>
-                  <AddNewMenuCard onClick={handleAddNewMenu} />
-                </Box>
-              )}
-
-              {/* Add New Modifier Card */}
-              {activeTab === 1 && getCurrentData().length > 0 && (
-                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(33.33% - 16px)', lg: '1 1 calc(25% - 18px)' } }}>
-                  <AddNewModifierCard onClick={handleAddNewModifier} />
-                </Box>
+              {/* Add New Menu Card - Always visible when there are items */}
+              {getCurrentData().length > 0 && (
+                <AddNewMenuCard onClick={handleAddNewMenu} />
               )}
             </Box>
           )}

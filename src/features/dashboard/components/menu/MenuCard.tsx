@@ -15,7 +15,7 @@ import {
   Edit,
   Delete,
   ContentCopy,
-  Restaurant,
+  MenuBook,
 } from '@mui/icons-material';
 import { useDashboardTheme } from '../../context/ThemeContext';
 
@@ -64,13 +64,16 @@ const MenuCard: React.FC<MenuCardProps> = ({
   return (
     <Card
       sx={{
-        height: '100%',
+        height: '240px', // Daha kompakt yükseklik
+        minHeight: '240px', // Minimum yükseklik garantisi
         background: mode === 'dark'
           ? 'linear-gradient(145deg, #111111 0%, #1a1a1a 100%)'
           : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
         border: `1px solid ${theme.palette.divider}`,
         transition: 'all 0.3s ease',
         position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: mode === 'dark'
@@ -80,13 +83,13 @@ const MenuCard: React.FC<MenuCardProps> = ({
         },
       }}
     >
-      <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
         {/* Menu Icon and Actions */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Box
             sx={{
-              width: 60,
-              height: 60,
+              width: 50,
+              height: 50,
               borderRadius: 2,
               background: mode === 'dark'
                 ? 'rgba(99, 102, 241, 0.1)'
@@ -97,9 +100,9 @@ const MenuCard: React.FC<MenuCardProps> = ({
               border: `1px solid ${mode === 'dark' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(79, 70, 229, 0.2)'}`,
             }}
           >
-            <Restaurant
+            <MenuBook
               sx={{
-                fontSize: 28,
+                fontSize: 24,
                 color: theme.palette.primary.main,
                 opacity: 0.7,
               }}
@@ -173,7 +176,12 @@ const MenuCard: React.FC<MenuCardProps> = ({
               fontWeight: 600,
               mb: 1,
               color: theme.palette.text.primary,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '100%',
             }}
+            title={name} // Tooltip for full name
           >
             {name}
           </Typography>
@@ -181,7 +189,7 @@ const MenuCard: React.FC<MenuCardProps> = ({
             variant="body2"
             sx={{
               color: theme.palette.text.secondary,
-              mb: 2,
+              mb: 1,
             }}
           >
             {itemCount} items
@@ -191,7 +199,7 @@ const MenuCard: React.FC<MenuCardProps> = ({
             sx={{
               color: theme.palette.text.secondary,
               display: 'block',
-              mb: 2,
+              mb: 1.5,
             }}
           >
             Last modified: {lastModified}

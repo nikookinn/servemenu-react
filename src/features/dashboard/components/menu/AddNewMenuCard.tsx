@@ -20,8 +20,8 @@ const AddNewMenuCard: React.FC<AddNewMenuCardProps> = ({ onClick }) => {
     <Card
       onClick={onClick}
       sx={{
-        height: '100%',
-        minHeight: '200px',
+        height: '240px', // MenuCard ile aynı yükseklik
+        minHeight: '240px', // MenuCard ile aynı minimum yükseklik
         background: mode === 'dark'
           ? 'linear-gradient(145deg, #111111 0%, #1a1a1a 100%)'
           : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
@@ -47,8 +47,8 @@ const AddNewMenuCard: React.FC<AddNewMenuCardProps> = ({ onClick }) => {
     >
       <Box
         sx={{
-          width: 60,
-          height: 60,
+          width: 50,
+          height: 50,
           borderRadius: '50%',
           background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           display: 'flex',
@@ -62,7 +62,7 @@ const AddNewMenuCard: React.FC<AddNewMenuCardProps> = ({ onClick }) => {
       >
         <Add
           sx={{
-            fontSize: 32,
+            fontSize: 28,
             color: 'white',
           }}
         />

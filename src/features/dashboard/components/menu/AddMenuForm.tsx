@@ -10,18 +10,23 @@ import { useDashboardTheme } from '../../context/ThemeContext';
 
 interface AddMenuFormProps {
   onSave: (menuData: { name: string; description: string }) => void;
+  editMode?: boolean;
+  initialData?: {
+    name: string;
+    description: string;
+  };
 }
 
 export interface AddMenuFormRef {
   save: () => void;
 }
 
-const AddMenuForm = forwardRef<AddMenuFormRef, AddMenuFormProps>(({ onSave }, ref) => {
+const AddMenuForm = forwardRef<AddMenuFormRef, AddMenuFormProps>(({ onSave, editMode = false, initialData }, ref) => {
   const theme = useTheme();
   const { mode } = useDashboardTheme();
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
+    name: initialData?.name || '',
+    description: initialData?.description || '',
   });
   const [errors, setErrors] = useState({
     name: '',
@@ -119,7 +124,7 @@ const AddMenuForm = forwardRef<AddMenuFormRef, AddMenuFormProps>(({ onSave }, re
                 fontSize: '1.1rem',
               }}
             >
-              Add New Menu
+              {editMode ? 'Edit Menu' : 'Add New Menu'}
             </Typography>
             <Typography
               variant="body2"
@@ -129,7 +134,7 @@ const AddMenuForm = forwardRef<AddMenuFormRef, AddMenuFormProps>(({ onSave }, re
                 mt: 0.5,
               }}
             >
-              Create a new menu for your restaurant
+              {editMode ? 'Update your menu details below' : 'Create a new menu for your restaurant'}
             </Typography>
           </Box>
           
@@ -175,7 +180,7 @@ const AddMenuForm = forwardRef<AddMenuFormRef, AddMenuFormProps>(({ onSave }, re
               transition: 'all 0.3s ease',
             }}
           >
-            Save Menu
+            {editMode ? 'Update Menu' : 'Save Menu'}
           </Button>
         </Box>
 

@@ -2,7 +2,7 @@
 export { default as AddModifierForm } from './AddModifierForm';
 export { default as ModifierDeleteConfirmationDialog } from './DeleteConfirmationDialog';
 export { default as ModifierCard } from './ModifierCard';
-export { AddNewModifierCard, ModifierEmptyState } from './ModifierUtils';
+export { default as ModifierEmptyState } from './ModifierEmptyState';
 
 // Export hooks
 export { useModifierManagement } from './useModifierManagement';
