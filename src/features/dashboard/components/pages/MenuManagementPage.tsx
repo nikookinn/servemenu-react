@@ -5,227 +5,23 @@ import {
   Tabs,
   Tab,
   Card,
-  CardContent,
-  Chip,
-  IconButton,
-  Menu,
-  MenuItem,
   Tooltip,
   Button,
+  IconButton,
   useTheme,
 } from '@mui/material';
 import {
   Add,
-  MoreVert,
-  Edit,
-  Delete,
   ContentCopy,
   QrCode,
   Restaurant,
   Visibility,
 } from '@mui/icons-material';
 import { useDashboardTheme } from '../../context/ThemeContext';
-import AddMenuForm, { AddMenuFormRef } from '../menu/AddMenuForm';
-import AddModifierForm, { AddModifierFormRef } from '../modifier/AddModifierForm';
+import { AddMenuForm, AddMenuFormRef, MenuCard } from '../menu';
+import { AddModifierForm, AddModifierFormRef, ModifierDeleteConfirmationDialog, ModifierCard, AddNewModifierCard, ModifierEmptyState, useModifierManagement } from '../modifier';
 import MenuDeleteConfirmationDialog from '../menu/DeleteConfirmationDialog';
-import ModifierDeleteConfirmationDialog from '../modifier/DeleteConfirmationDialog';
 import { ArchivedItemsList, useArchivedItems, PermanentDeleteDialog } from '../archived';
-interface MenuCardProps {
-  id: string;
-  name: string;
-  itemCount: number;
-  status: 'active' | 'inactive' | 'draft';
-  lastModified: string;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
-  onDuplicate: (id: string) => void;
-}
-
-const MenuCard: React.FC<MenuCardProps> = ({
-  id,
-  name,
-  itemCount,
-  status,
-  lastModified,
-  onEdit,
-  onDelete,
-  onDuplicate,
-}) => {
-  const theme = useTheme();
-  const { mode } = useDashboardTheme();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const getStatusColor = () => {
-    switch (status) {
-      case 'active': return theme.palette.success.main;
-      case 'inactive': return theme.palette.error.main;
-      case 'draft': return theme.palette.warning.main;
-      default: return theme.palette.text.secondary;
-    }
-  };
-
-  return (
-    <Card
-      sx={{
-        height: '100%',
-        background: mode === 'dark'
-          ? 'linear-gradient(145deg, #111111 0%, #1a1a1a 100%)'
-          : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-        border: `1px solid ${theme.palette.divider}`,
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: mode === 'dark'
-            ? '0 16px 48px rgba(0, 0, 0, 0.4)'
-            : '0 16px 48px rgba(0, 0, 0, 0.15)',
-          border: `1px solid ${theme.palette.primary.main}`,
-        },
-      }}
-    >
-      <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-        {/* Menu Icon and Actions */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-          <Box
-            sx={{
-              width: 60,
-              height: 60,
-              borderRadius: 2,
-              background: mode === 'dark'
-                ? 'rgba(99, 102, 241, 0.1)'
-                : 'rgba(79, 70, 229, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: `1px solid ${mode === 'dark' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(79, 70, 229, 0.2)'}`,
-            }}
-          >
-            <Restaurant
-              sx={{
-                fontSize: 28,
-                color: theme.palette.primary.main,
-                opacity: 0.7,
-              }}
-            />
-          </Box>
-          <IconButton
-            onClick={handleMenuClick}
-            sx={{
-              color: theme.palette.text.secondary,
-              '&:hover': {
-                backgroundColor: mode === 'dark'
-                  ? 'rgba(99, 102, 241, 0.1)'
-                  : 'rgba(79, 70, 229, 0.1)',
-              },
-            }}
-          >
-            <MoreVert />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            PaperProps={{
-              sx: {
-                borderRadius: 2,
-                minWidth: 150,
-                background: mode === 'dark'
-                  ? 'rgba(17, 17, 17, 0.95)'
-                  : 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(20px)',
-                border: `1px solid ${theme.palette.divider}`,
-              },
-            }}
-          >
-            <MenuItem
-              onClick={() => {
-                onEdit(id);
-                handleMenuClose();
-              }}
-            >
-              <Edit sx={{ mr: 2, fontSize: '1.2rem' }} />
-              Edit
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                onDuplicate(id);
-                handleMenuClose();
-              }}
-            >
-              <ContentCopy sx={{ mr: 2, fontSize: '1.2rem' }} />
-              Duplicate
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                onDelete(id);
-                handleMenuClose();
-              }}
-              sx={{ color: theme.palette.error.main }}
-            >
-              <Delete sx={{ mr: 2, fontSize: '1.2rem' }} />
-              Delete
-            </MenuItem>
-          </Menu>
-        </Box>
-
-        {/* Menu Info */}
-        <Box sx={{ flex: 1 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 600,
-              mb: 1,
-              color: theme.palette.text.primary,
-            }}
-          >
-            {name}
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: theme.palette.text.secondary,
-              mb: 2,
-            }}
-          >
-            {itemCount} items
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              color: theme.palette.text.secondary,
-              display: 'block',
-              mb: 2,
-            }}
-          >
-            Last modified: {lastModified}
-          </Typography>
-        </Box>
-
-        {/* Status */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Chip
-            label={status.charAt(0).toUpperCase() + status.slice(1)}
-            size="small"
-            sx={{
-              backgroundColor: getStatusColor(),
-              color: 'white',
-              fontWeight: 500,
-              fontSize: '0.75rem',
-            }}
-          />
-        </Box>
-      </CardContent>
-    </Card>
-  );
-};
 
 const MenuManagementPage: React.FC = () => {
   const theme = useTheme();
@@ -295,7 +91,7 @@ const MenuManagementPage: React.FC = () => {
       }
     } else {
       // Modifier'lar kalıcı olarak silinir (archived'a gitmez)
-      setModifiers(prev => prev.filter(modifier => modifier.id !== itemId));
+      handleModifierDelete(itemId);
     }
     
     setDeleteDialog({
@@ -326,8 +122,7 @@ const MenuManagementPage: React.FC = () => {
         const { type, deletedAt, ...menuData } = restoredItem;
         setMenus(prev => [menuData, ...prev]);
       } else {
-        const { type, deletedAt, ...modifierData } = restoredItem;
-        setModifiers(prev => [modifierData, ...prev]);
+        restoreModifier(restoredItem);
       }
     }
   };
@@ -401,26 +196,18 @@ const MenuManagementPage: React.FC = () => {
     setCurrentView('addModifier');
   };
 
-  const handleSaveModifier = (modifierData: {
+  const handleSaveModifierWrapper = (modifierData: {
     name: string;
     type: 'optional' | 'required';
     allowMultiple: boolean;
     options: any[];
   }) => {
-    const newModifier = {
-      id: Date.now().toString(),
-      name: modifierData.name,
-      itemCount: modifierData.options.length,
-      status: 'active' as const,
-      lastModified: 'Just now',
-    };
-    
-    setModifiers(prev => [newModifier, ...prev]);
+    handleSaveModifier(modifierData);
     setCurrentView('list');
-    console.log('Modifier saved:', modifierData);
   };
 
-  const [modifiers, setModifiers] = useState<{ id: string; name: string; itemCount: number; status: 'active' | 'inactive' | 'draft'; lastModified: string }[]>([]);
+  // Use modifier management hook
+  const { modifiers, handleEdit: handleModifierEdit, handleDelete: handleModifierDelete, handleDuplicate: handleModifierDuplicate, handleSaveModifier, restoreModifier } = useModifierManagement();
   
   // Use archived items hook
   const { items: archivedItems, addArchivedItem, restoreArchivedItem, permanentlyDeleteItem } = useArchivedItems();
@@ -764,7 +551,6 @@ const MenuManagementPage: React.FC = () => {
         /* Add Menu Form */
         <AddMenuForm
           ref={addMenuFormRef}
-          onBack={handleBackToList}
           onSave={handleSaveMenu}
         />
       ) : currentView === 'addModifier' ? (
@@ -772,7 +558,7 @@ const MenuManagementPage: React.FC = () => {
         <AddModifierForm
           ref={addModifierFormRef}
           onBack={handleBackToList}
-          onSave={handleSaveModifier}
+          onSave={handleSaveModifierWrapper}
         />
       ) : (
         <>
@@ -788,12 +574,21 @@ const MenuManagementPage: React.FC = () => {
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
               {getCurrentData().map((item: any) => (
                 <Box key={item.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(33.33% - 16px)', lg: '1 1 calc(25% - 18px)' } }}>
-                  <MenuCard
-                    {...item}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onDuplicate={handleDuplicate}
-                  />
+                  {activeTab === 1 ? (
+                    <ModifierCard
+                      {...item}
+                      onEdit={handleModifierEdit}
+                      onDelete={handleDelete}
+                      onDuplicate={handleModifierDuplicate}
+                    />
+                  ) : (
+                    <MenuCard
+                      {...item}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onDuplicate={handleDuplicate}
+                    />
+                  )}
                 </Box>
               ))}
               
@@ -873,79 +668,13 @@ const MenuManagementPage: React.FC = () => {
               {/* Add New Modifier Card */}
               {activeTab === 1 && getCurrentData().length > 0 && (
                 <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(33.33% - 16px)', lg: '1 1 calc(25% - 18px)' } }}>
-                  <Card
-                    onClick={handleAddNewModifier}
-                    sx={{
-                      height: '100%',
-                      minHeight: '200px',
-                      background: mode === 'dark'
-                        ? 'linear-gradient(145deg, #111111 0%, #1a1a1a 100%)'
-                        : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-                      border: `2px dashed ${theme.palette.primary.main}`,
-                      borderRadius: 2,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: mode === 'dark'
-                          ? '0 16px 48px rgba(99, 102, 241, 0.3)'
-                          : '0 16px 48px rgba(79, 70, 229, 0.2)',
-                        borderColor: theme.palette.primary.dark,
-                        background: mode === 'dark'
-                          ? 'linear-gradient(145deg, #1a1a1a 0%, #2a2a2a 100%)'
-                          : 'linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%)',
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: '50%',
-                        background: mode === 'dark'
-                          ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
-                          : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mb: 2,
-                        transition: 'all 0.3s ease',
-                      }}
-                    >
-                      <Add sx={{ fontSize: '2rem', color: 'white' }} />
-                    </Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: 600,
-                        color: theme.palette.text.primary,
-                        textAlign: 'center',
-                        mb: 1,
-                      }}
-                    >
-                      Add New Modifier
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        textAlign: 'center',
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      Create a new modifier
-                    </Typography>
-                  </Card>
+                  <AddNewModifierCard onClick={handleAddNewModifier} />
                 </Box>
               )}
             </Box>
           )}
-          {/* Empty State for Menus and Modifiers only */}
-          {activeTab !== 2 && getCurrentData().length === 0 && (
+          {/* Empty State for Menus only */}
+          {activeTab === 0 && getCurrentData().length === 0 && (
             <Box
               sx={{
                 textAlign: 'center',
@@ -991,7 +720,7 @@ const MenuManagementPage: React.FC = () => {
                   fontSize: { xs: '1.5rem', md: '2rem' },
                 }}
               >
-                {activeTab === 0 ? 'Create Your First Menu' : 'No Modifiers Found'}
+                Create Your First Menu
               </Typography>
               <Typography
                 variant="body1"
@@ -1004,16 +733,13 @@ const MenuManagementPage: React.FC = () => {
                   fontSize: { xs: '0.95rem', md: '1rem' },
                 }}
               >
-                {activeTab === 0 
-                  ? 'Start building your digital menu experience. Create your first menu to showcase your delicious offerings to customers.'
-                  : 'Get started by creating your first modifier to customize menu items.'
-                }
+                Start building your digital menu experience. Create your first menu to showcase your delicious offerings to customers.
               </Typography>
               <Button
                 startIcon={<Add />}
                 variant="contained"
                 size="large"
-                onClick={activeTab === 0 ? handleAddNewMenu : handleAddNewModifier}
+                onClick={handleAddNewMenu}
                 sx={{
                   textTransform: 'none',
                   fontWeight: 600,
@@ -1037,9 +763,14 @@ const MenuManagementPage: React.FC = () => {
                   transition: 'all 0.3s ease',
                 }}
               >
-                Create Your First {activeTab === 0 ? 'Menu' : 'Modifier'}
+                Create Your First Menu
               </Button>
             </Box>
+          )}
+
+          {/* Empty State for Modifiers only */}
+          {activeTab === 1 && getCurrentData().length === 0 && (
+            <ModifierEmptyState onAddModifier={handleAddNewModifier} />
           )}
         </>
       )}

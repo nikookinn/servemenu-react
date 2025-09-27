@@ -8,7 +8,6 @@ import {
 import { useDashboardTheme } from '../../context/ThemeContext';
 
 interface AddMenuFormProps {
-  onBack: () => void;
   onSave: (menuData: { name: string; description: string }) => void;
 }
 
@@ -16,7 +15,7 @@ export interface AddMenuFormRef {
   save: () => void;
 }
 
-const AddMenuForm = forwardRef<AddMenuFormRef, AddMenuFormProps>(({ onBack, onSave }, ref) => {
+const AddMenuForm = forwardRef<AddMenuFormRef, AddMenuFormProps>(({ onSave }, ref) => {
   const theme = useTheme();
   const { mode } = useDashboardTheme();
   const [formData, setFormData] = useState({
