@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useModifierDelete } from './useModifierDelete';
 
 interface ModifierData {
   id: string;
@@ -17,6 +18,9 @@ interface ModifierFormData {
 
 export const useModifierManagement = () => {
   const [modifiers, setModifiers] = useState<ModifierData[]>([]);
+  
+  // Delete functionality
+  const deleteOperations = useModifierDelete();
 
   const handleEdit = (id: string) => {
     console.log('Edit modifier:', id);
@@ -56,5 +60,8 @@ export const useModifierManagement = () => {
     handleDuplicate,
     handleSaveModifier,
     restoreModifier,
+    
+    // Delete operations
+    ...deleteOperations,
   };
 };

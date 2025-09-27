@@ -4,7 +4,6 @@ import {
   Typography,
   Tabs,
   Tab,
-  Card,
   Tooltip,
   Button,
   IconButton,
@@ -14,11 +13,10 @@ import {
   Add,
   ContentCopy,
   QrCode,
-  Restaurant,
   Visibility,
 } from '@mui/icons-material';
 import { useDashboardTheme } from '../../context/ThemeContext';
-import { AddMenuForm, AddMenuFormRef, MenuCard } from '../menu';
+import { AddMenuForm, MenuCard, MenuEmptyState, AddNewMenuCard, useMenuManagement } from '../menu';
 import { AddModifierForm, AddModifierFormRef, ModifierDeleteConfirmationDialog, ModifierCard, AddNewModifierCard, ModifierEmptyState, useModifierManagement } from '../modifier';
 import MenuDeleteConfirmationDialog from '../menu/DeleteConfirmationDialog';
 import { ArchivedItemsList, useArchivedItems, PermanentDeleteDialog } from '../archived';
@@ -27,20 +25,34 @@ const MenuManagementPage: React.FC = () => {
   const theme = useTheme();
   const { mode } = useDashboardTheme();
   const [activeTab, setActiveTab] = useState(0);
-  const [currentView, setCurrentView] = useState<'list' | 'add' | 'addModifier'>('list');
-  const addMenuFormRef = useRef<AddMenuFormRef>(null);
+  const [currentView, setCurrentView] = useState<'list' | 'addModifier'>('list');
   const addModifierFormRef = useRef<AddModifierFormRef>(null);
-  const [menus, setMenus] = useState<{ id: string; name: string; itemCount: number; status: 'active' | 'inactive' | 'draft'; lastModified: string }[]>([]);
-  const [deleteDialog, setDeleteDialog] = useState<{
+  
+  // Use menu management hook
+  const { 
+    menus, 
+    currentView: menuCurrentView, 
+    handleAddNewMenu, 
+    handleBackToList: handleBackToMenuList, 
+    handleSaveMenu, 
+    handleEditMenu, 
+    handleDeleteMenu, 
+    handleDuplicateMenu, 
+    restoreMenu,
+    // Delete operations
+    deleteDialog: menuDeleteDialog,
+    openDeleteDialog: openMenuDeleteDialog,
+    closeDeleteDialog: closeMenuDeleteDialog,
+    confirmDelete: confirmMenuDelete
+  } = useMenuManagement();
+  const [modifierDeleteDialog, setModifierDeleteDialog] = useState<{
     open: boolean;
     itemId: string;
     itemName: string;
-    itemType: 'menu' | 'modifier';
   }>({
     open: false,
     itemId: '',
     itemName: '',
-    itemType: 'menu',
   });
 
   const [permanentDeleteDialog, setPermanentDeleteDialog] = useState<{
@@ -59,60 +71,66 @@ const MenuManagementPage: React.FC = () => {
     setActiveTab(newValue);
   };
   const handleEdit = (id: string) => {
-    console.log('Edit menu:', id);
+    if (activeTab === 0) {
+      handleEditMenu(id);
+    } else {
+      handleModifierEdit(id);
+    }
   };
 
   const handleDelete = (id: string) => {
     const currentData = getCurrentData();
     const item = currentData.find(item => item.id === id);
     if (item) {
-      setDeleteDialog({
-        open: true,
-        itemId: id,
-        itemName: item.name,
-        itemType: activeTab === 0 ? 'menu' : 'modifier',
-      });
+      if (activeTab === 0) {
+        // Menu delete
+        openMenuDeleteDialog(id, item.name);
+      } else {
+        // Modifier delete
+        setModifierDeleteDialog({
+          open: true,
+          itemId: id,
+          itemName: item.name,
+        });
+      }
     }
   };
 
-  const handleDeleteConfirm = () => {
-    const { itemId, itemType } = deleteDialog;
-    
-    if (itemType === 'menu') {
-      const menuToDelete = menus.find(menu => menu.id === itemId);
-      if (menuToDelete) {
-        // Add to archived items using hook
-        addArchivedItem({
-          ...menuToDelete,
-          type: 'menu',
-        });
-        // Remove from active menus
-        setMenus(prev => prev.filter(menu => menu.id !== itemId));
-      }
-    } else {
-      // Modifier'lar kalıcı olarak silinir (archived'a gitmez)
-      handleModifierDelete(itemId);
-    }
-    
-    setDeleteDialog({
+  const handleMenuDeleteConfirm = () => {
+    confirmMenuDelete(
+      handleDeleteMenu,
+      (menu) => addArchivedItem({ ...menu, type: 'menu' })
+    );
+  };
+
+  const handleModifierDeleteConfirm = () => {
+    const { itemId } = modifierDeleteDialog;
+    handleModifierDelete(itemId);
+    setModifierDeleteDialog({
       open: false,
       itemId: '',
       itemName: '',
-      itemType: 'menu',
     });
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialog({
+  const handleMenuDeleteCancel = () => {
+    closeMenuDeleteDialog();
+  };
+
+  const handleModifierDeleteCancel = () => {
+    setModifierDeleteDialog({
       open: false,
       itemId: '',
       itemName: '',
-      itemType: 'menu',
     });
   };
 
   const handleDuplicate = (id: string) => {
-    console.log('Duplicate menu:', id);
+    if (activeTab === 0) {
+      handleDuplicateMenu(id);
+    } else {
+      handleModifierDuplicate(id);
+    }
   };
 
   const handleRestore = (id: string) => {
@@ -120,7 +138,7 @@ const MenuManagementPage: React.FC = () => {
     if (restoredItem) {
       if (restoredItem.type === 'menu') {
         const { type, deletedAt, ...menuData } = restoredItem;
-        setMenus(prev => [menuData, ...prev]);
+        restoreMenu(menuData);
       } else {
         restoreModifier(restoredItem);
       }
@@ -170,26 +188,12 @@ const MenuManagementPage: React.FC = () => {
     console.log('Showing QR code...');
   };
 
-  const handleAddNewMenu = () => {
-    setCurrentView('add');
-  };
-
   const handleBackToList = () => {
-    setCurrentView('list');
-  };
-
-  const handleSaveMenu = (menuData: { name: string; description: string }) => {
-    const newMenu = {
-      id: Date.now().toString(),
-      name: menuData.name,
-      itemCount: 0,
-      status: 'draft' as const,
-      lastModified: 'Just now',
-    };
-    
-    setMenus(prev => [newMenu, ...prev]);
-    setCurrentView('list');
-    console.log('Menu saved:', menuData);
+    if (menuCurrentView !== 'list') {
+      handleBackToMenuList();
+    } else {
+      setCurrentView('list');
+    }
   };
 
   const handleAddNewModifier = () => {
@@ -401,115 +405,131 @@ const MenuManagementPage: React.FC = () => {
 
       {/* Add New Button / Back Button with Breadcrumb */}
       <Box sx={{ mb: 4 }}>
-        {currentView === 'add' || currentView === 'addModifier' ? (
-          /* Back Button with Breadcrumb and Save Button */
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            width: '100%',
-          }}>
-            {/* Left Side - Back Button and Breadcrumb */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Button
-                variant="outlined"
-                size="large"
-                onClick={handleBackToList}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 3,
-                  py: 1.5,
-                  borderColor: theme.palette.primary.main,
-                  color: theme.palette.primary.main,
-                  '&:hover': {
-                    backgroundColor: mode === 'dark'
-                      ? 'rgba(99, 102, 241, 0.1)'
-                      : 'rgba(79, 70, 229, 0.1)',
-                    borderColor: theme.palette.primary.main,
-                    transform: 'translateY(-2px)',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                ← Back to {currentView === 'add' ? 'Menus' : 'Modifiers'}
-              </Button>
-              
-              {/* Breadcrumb */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography
-                  component="button"
-                  onClick={handleBackToList}
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    textDecoration: 'none',
-                    fontWeight: 500,
-                    fontSize: '1rem',
-                    cursor: 'pointer',
-                    border: 'none',
-                    background: 'none',
-                    padding: 0,
-                    '&:hover': {
-                      color: theme.palette.primary.main,
-                      textDecoration: 'underline',
-                    },
-                  }}
-                >
-                  {currentView === 'add' ? 'Menus' : 'Modifiers'}
-                </Typography>
-                <Typography sx={{ color: theme.palette.text.secondary, fontSize: '1rem' }}>
-                  /
-                </Typography>
-                <Typography
-                  sx={{
-                    color: theme.palette.text.primary,
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                  }}
-                >
-                  {currentView === 'add' ? 'Add New Menu' : 'Add New Modifier'}
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Right Side - Save Button */}
+        {menuCurrentView === 'add' ? (
+          /* Back Button with Breadcrumb for Menu */
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button
-              variant="contained"
-              onClick={() => {
-                if (currentView === 'add' && addMenuFormRef.current) {
-                  addMenuFormRef.current.save();
-                } else if (currentView === 'addModifier' && addModifierFormRef.current) {
-                  addModifierFormRef.current.save();
-                }
-              }}
+              variant="outlined"
+              size="large"
+              onClick={handleBackToList}
               sx={{
-                background: mode === 'dark'
-                  ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
-                  : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                color: 'white',
+                textTransform: 'none',
                 fontWeight: 600,
                 px: 3,
                 py: 1.5,
-                borderRadius: 1,
-                textTransform: 'none',
-                fontSize: '0.875rem',
-                boxShadow: mode === 'dark'
-                  ? '0 4px 20px rgba(99, 102, 241, 0.3)'
-                  : '0 4px 20px rgba(79, 70, 229, 0.3)',
+                borderColor: theme.palette.primary.main,
+                color: theme.palette.primary.main,
                 '&:hover': {
-                  background: mode === 'dark'
-                    ? 'linear-gradient(135deg, #5b5ff1 0%, #7c3aed 100%)'
-                    : 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)',
-                  boxShadow: mode === 'dark'
-                    ? '0 6px 24px rgba(99, 102, 241, 0.4)'
-                    : '0 6px 24px rgba(79, 70, 229, 0.4)',
+                  backgroundColor: mode === 'dark'
+                    ? 'rgba(99, 102, 241, 0.1)'
+                    : 'rgba(79, 70, 229, 0.1)',
+                  borderColor: theme.palette.primary.main,
                   transform: 'translateY(-2px)',
                 },
                 transition: 'all 0.3s ease',
               }}
             >
-              {currentView === 'add' ? 'Save Menu' : 'Save Modifier'}
+              ← Back to Menus
             </Button>
+            
+            {/* Breadcrumb */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                component="button"
+                onClick={handleBackToList}
+                sx={{
+                  color: theme.palette.text.secondary,
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: 'none',
+                  padding: 0,
+                  '&:hover': {
+                    color: theme.palette.primary.main,
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Menus
+              </Typography>
+              <Typography sx={{ color: theme.palette.text.secondary, fontSize: '1rem' }}>
+                /
+              </Typography>
+              <Typography
+                sx={{
+                  color: theme.palette.text.primary,
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                }}
+              >
+                Add New Menu
+              </Typography>
+            </Box>
+          </Box>
+        ) : currentView === 'addModifier' ? (
+          /* Back Button with Breadcrumb for Modifier */
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={handleBackToList}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                py: 1.5,
+                borderColor: theme.palette.primary.main,
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  backgroundColor: mode === 'dark'
+                    ? 'rgba(99, 102, 241, 0.1)'
+                    : 'rgba(79, 70, 229, 0.1)',
+                  borderColor: theme.palette.primary.main,
+                  transform: 'translateY(-2px)',
+                },
+                transition: 'all 0.3s ease',
+              }}
+            >
+              ← Back to Modifiers
+            </Button>
+            
+            {/* Breadcrumb */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                component="button"
+                onClick={handleBackToList}
+                sx={{
+                  color: theme.palette.text.secondary,
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: 'none',
+                  padding: 0,
+                  '&:hover': {
+                    color: theme.palette.primary.main,
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Modifiers
+              </Typography>
+              <Typography sx={{ color: theme.palette.text.secondary, fontSize: '1rem' }}>
+                /
+              </Typography>
+              <Typography
+                sx={{
+                  color: theme.palette.text.primary,
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                }}
+              >
+                Add New Modifier
+              </Typography>
+            </Box>
           </Box>
         ) : activeTab !== 2 ? (
           /* Add New Button - Hide on Archived tab */
@@ -547,17 +567,15 @@ const MenuManagementPage: React.FC = () => {
       </Box>
 
       {/* Content Area - Conditional Rendering */}
-      {currentView === 'add' ? (
+      {menuCurrentView === 'add' ? (
         /* Add Menu Form */
         <AddMenuForm
-          ref={addMenuFormRef}
           onSave={handleSaveMenu}
         />
       ) : currentView === 'addModifier' ? (
         /* Add Modifier Form */
         <AddModifierForm
           ref={addModifierFormRef}
-          onBack={handleBackToList}
           onSave={handleSaveModifierWrapper}
         />
       ) : (
@@ -595,73 +613,7 @@ const MenuManagementPage: React.FC = () => {
               {/* Add New Card - Always visible when there are items */}
               {activeTab === 0 && getCurrentData().length > 0 && (
                 <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(33.33% - 16px)', lg: '1 1 calc(25% - 18px)' } }}>
-                  <Card
-                    onClick={handleAddNewMenu}
-                    sx={{
-                      height: '100%',
-                      minHeight: '200px',
-                      background: mode === 'dark'
-                        ? 'linear-gradient(145deg, #111111 0%, #1a1a1a 100%)'
-                        : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-                      border: `2px dashed ${theme.palette.primary.main}`,
-                      borderRadius: 2,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: mode === 'dark'
-                          ? '0 16px 48px rgba(99, 102, 241, 0.3)'
-                          : '0 16px 48px rgba(79, 70, 229, 0.2)',
-                        borderColor: theme.palette.primary.dark,
-                        background: mode === 'dark'
-                          ? 'linear-gradient(145deg, #1a1a1a 0%, #2a2a2a 100%)'
-                          : 'linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%)',
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: '50%',
-                        background: mode === 'dark'
-                          ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
-                          : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mb: 2,
-                        transition: 'all 0.3s ease',
-                      }}
-                    >
-                      <Add sx={{ fontSize: '2rem', color: 'white' }} />
-                    </Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: 600,
-                        color: theme.palette.text.primary,
-                        textAlign: 'center',
-                        mb: 1,
-                      }}
-                    >
-                      Add New Menu
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        textAlign: 'center',
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      Create a new menu
-                    </Typography>
-                  </Card>
+                  <AddNewMenuCard onClick={handleAddNewMenu} />
                 </Box>
               )}
 
@@ -675,97 +627,7 @@ const MenuManagementPage: React.FC = () => {
           )}
           {/* Empty State for Menus only */}
           {activeTab === 0 && getCurrentData().length === 0 && (
-            <Box
-              sx={{
-                textAlign: 'center',
-                py: 8,
-                px: 4,
-                background: mode === 'dark'
-                  ? 'linear-gradient(145deg, #111111 0%, #1a1a1a 100%)'
-                  : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 3,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: '50%',
-                  background: mode === 'dark'
-                    ? 'rgba(99, 102, 241, 0.1)'
-                    : 'rgba(79, 70, 229, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3,
-                  border: `2px solid ${mode === 'dark' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(79, 70, 229, 0.2)'}`,
-                }}
-              >
-                <Restaurant
-                  sx={{
-                    fontSize: 40,
-                    color: theme.palette.primary.main,
-                    opacity: 0.8,
-                  }}
-                />
-              </Box>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 700,
-                  mb: 2,
-                  color: theme.palette.text.primary,
-                  fontSize: { xs: '1.5rem', md: '2rem' },
-                }}
-              >
-                Create Your First Menu
-              </Typography>
-              <Typography
-                variant="body1"
-                sx={{
-                  color: theme.palette.text.secondary,
-                  mb: 4,
-                  maxWidth: 400,
-                  mx: 'auto',
-                  lineHeight: 1.6,
-                  fontSize: { xs: '0.95rem', md: '1rem' },
-                }}
-              >
-                Start building your digital menu experience. Create your first menu to showcase your delicious offerings to customers.
-              </Typography>
-              <Button
-                startIcon={<Add />}
-                variant="contained"
-                size="large"
-                onClick={handleAddNewMenu}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 4,
-                  py: 1.5,
-                  background: mode === 'dark'
-                    ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
-                    : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                  boxShadow: mode === 'dark'
-                    ? '0 4px 20px rgba(99, 102, 241, 0.3)'
-                    : '0 4px 20px rgba(79, 70, 229, 0.3)',
-                  '&:hover': {
-                    background: mode === 'dark'
-                      ? 'linear-gradient(135deg, #5b5ff1 0%, #7c3aed 100%)'
-                      : 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)',
-                    boxShadow: mode === 'dark'
-                      ? '0 6px 24px rgba(99, 102, 241, 0.4)'
-                      : '0 6px 24px rgba(79, 70, 229, 0.4)',
-                    transform: 'translateY(-2px)',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                Create Your First Menu
-              </Button>
-            </Box>
+            <MenuEmptyState onAddMenu={handleAddNewMenu} />
           )}
 
           {/* Empty State for Modifiers only */}
@@ -776,23 +638,21 @@ const MenuManagementPage: React.FC = () => {
       )}
 
       {/* Premium Delete Confirmation Dialogs */}
-      {deleteDialog.itemType === 'menu' ? (
-        <MenuDeleteConfirmationDialog
-          open={deleteDialog.open}
-          onClose={handleDeleteCancel}
-          onConfirm={handleDeleteConfirm}
-          itemName={deleteDialog.itemName}
-          itemType={deleteDialog.itemType}
-        />
-      ) : (
-        <ModifierDeleteConfirmationDialog
-          open={deleteDialog.open}
-          onClose={handleDeleteCancel}
-          onConfirm={handleDeleteConfirm}
-          itemName={deleteDialog.itemName}
-          itemType={deleteDialog.itemType}
-        />
-      )}
+      <MenuDeleteConfirmationDialog
+        open={menuDeleteDialog.open}
+        onClose={handleMenuDeleteCancel}
+        onConfirm={handleMenuDeleteConfirm}
+        itemName={menuDeleteDialog.itemName}
+        itemType="menu"
+      />
+      
+      <ModifierDeleteConfirmationDialog
+        open={modifierDeleteDialog.open}
+        onClose={handleModifierDeleteCancel}
+        onConfirm={handleModifierDeleteConfirm}
+        itemName={modifierDeleteDialog.itemName}
+        itemType="modifier"
+      />
 
       {/* Permanent Delete Confirmation Dialog */}
       <PermanentDeleteDialog

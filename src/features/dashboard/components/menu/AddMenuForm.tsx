@@ -3,6 +3,7 @@ import {
   Box,
   Typography,
   TextField,
+  Button,
   useTheme,
 } from '@mui/material';
 import { useDashboardTheme } from '../../context/ThemeContext';
@@ -100,17 +101,82 @@ const AddMenuForm = forwardRef<AddMenuFormRef, AddMenuFormProps>(({ onSave }, re
           p: { xs: 2, md: 3 },
         }}
       >
-        <Box sx={{ mb: 2 }}>
-          <Typography
-            variant="h6"
+        {/* Header with Title and Save Button */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          mb: 2,
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 2, sm: 0 }
+        }}>
+          <Box>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                color: theme.palette.text.primary,
+                fontSize: '1.1rem',
+              }}
+            >
+              Add New Menu
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: theme.palette.text.secondary,
+                fontSize: '0.875rem',
+                mt: 0.5,
+              }}
+            >
+              Create a new menu for your restaurant
+            </Typography>
+          </Box>
+          
+          {/* Save Button */}
+          <Button
+            variant="contained"
+            onClick={handleSave}
+            disabled={!formData.name.trim() || !formData.description.trim()}
             sx={{
+              background: mode === 'dark'
+                ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
+                : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+              color: 'white',
               fontWeight: 600,
-              color: theme.palette.text.primary,
-              fontSize: '1.1rem',
+              px: 3,
+              py: 1.5,
+              borderRadius: 1,
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              minWidth: { xs: '100%', sm: 'auto' },
+              boxShadow: mode === 'dark'
+                ? '0 4px 20px rgba(99, 102, 241, 0.3)'
+                : '0 4px 20px rgba(79, 70, 229, 0.3)',
+              '&:hover': {
+                background: mode === 'dark'
+                  ? 'linear-gradient(135deg, #5b5ff1 0%, #7c3aed 100%)'
+                  : 'linear-gradient(135deg, #4338ca 0%, #6d28d9 100%)',
+                boxShadow: mode === 'dark'
+                  ? '0 6px 24px rgba(99, 102, 241, 0.4)'
+                  : '0 6px 24px rgba(79, 70, 229, 0.4)',
+                transform: 'translateY(-2px)',
+              },
+              '&:disabled': {
+                background: mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.1)'
+                  : 'rgba(0, 0, 0, 0.1)',
+                color: mode === 'dark'
+                  ? 'rgba(255, 255, 255, 0.3)'
+                  : 'rgba(0, 0, 0, 0.3)',
+                boxShadow: 'none',
+                transform: 'none',
+              },
+              transition: 'all 0.3s ease',
             }}
           >
-            Add New Menu
-          </Typography>
+            Save Menu
+          </Button>
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
