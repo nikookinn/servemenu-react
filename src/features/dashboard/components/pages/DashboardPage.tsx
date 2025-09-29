@@ -322,7 +322,7 @@ const DashboardPage: React.FC = () => {
                 fontWeight: 600,
                 px: { xs: 2, sm: 3 },
                 py: { xs: 1, sm: 1.2 },
-                borderRadius: 2,
+                borderRadius: 1,
                 textTransform: 'none',
                 fontSize: { xs: '0.8rem', sm: '0.875rem' },
                 minWidth: { xs: 'auto', sm: '140px' },

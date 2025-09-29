@@ -340,7 +340,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ open, collapsed, on
           <Box
             sx={{
               p: 2,
-              borderRadius: 2,
+              borderRadius: 1,
               background: mode === 'dark'
                 ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
                 : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',

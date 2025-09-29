@@ -239,7 +239,7 @@ const MenuManagementPage: React.FC = () => {
     <Box>
       {/* Header Section with Action Buttons */}
       <Box sx={{ 
-        mb: 2, 
+        mb: 1, 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: { xs: 'center', md: 'flex-start' },
@@ -352,7 +352,7 @@ const MenuManagementPage: React.FC = () => {
                 fontWeight: 600,
                 px: { xs: 2, sm: 3 },
                 py: { xs: 1, sm: 1.2 },
-                borderRadius: 2,
+                borderRadius: 1,
                 textTransform: 'none',
                 fontSize: { xs: '0.8rem', sm: '0.875rem' },
                 minWidth: { xs: 'auto', sm: '140px' },
