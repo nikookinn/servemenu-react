@@ -4,6 +4,7 @@ import { Box, Typography } from '@mui/material';
 import DashboardLayout from './components/layout/DashboardLayout';
 import DashboardPage from './components/pages/DashboardPage';
 import MenuManagementPage from './components/pages/MenuManagementPage';
+import MenuDetailPage from './components/pages/MenuDetailPage';
 
 // Placeholder components for other routes
 const OrdersPage = () => (
@@ -75,6 +76,7 @@ const DashboardRoutes: React.FC = () => {
       <Route path="/" element={<DashboardLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="menus" element={<MenuManagementPage />} />
+        <Route path="menus/:menuId" element={<MenuDetailPage />} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="stores/*" element={<StoresPage />} />
         <Route path="announcements/*" element={<AnnouncementsPage />} />

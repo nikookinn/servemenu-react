@@ -16,7 +16,7 @@ interface PermanentDeleteDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   itemName: string;
-  itemType: 'menu' | 'modifier';
+  itemType: 'menu'; // Sadece menu archive edilebilir
 }
 
 const PermanentDeleteDialog: React.FC<PermanentDeleteDialogProps> = ({

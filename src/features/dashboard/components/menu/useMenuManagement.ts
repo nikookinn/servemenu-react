@@ -1,4 +1,12 @@
-import { useState } from 'react';
+import { useAppDispatch, useAppSelector } from '../../../../app/hooks';
+import { 
+  addMenu, 
+  updateMenu, 
+  deleteMenu, 
+  addArchivedItem,
+  setMenuCurrentView,
+  setEditingMenu
+} from '../../store/dashboardSlice';
 import { useMenuDelete } from './useMenuDelete';
 
 export interface Menu {
@@ -16,20 +24,23 @@ export interface MenuFormData {
 }
 
 export const useMenuManagement = () => {
-  const [menus, setMenus] = useState<Menu[]>([]);
-  const [currentView, setCurrentView] = useState<'list' | 'add' | 'edit'>('list');
-  const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
+  const dispatch = useAppDispatch();
+  
+  // Get all state from Redux store
+  const menus = useAppSelector(state => state.dashboard.menus);
+  const currentView = useAppSelector(state => state.dashboard.ui.menuCurrentView);
+  const editingMenu = useAppSelector(state => state.dashboard.ui.editingMenu);
   
   // Delete functionality
   const deleteOperations = useMenuDelete(menus);
 
   const handleAddNewMenu = () => {
-    setCurrentView('add');
+    dispatch(setMenuCurrentView('add'));
   };
 
   const handleBackToList = () => {
-    setCurrentView('list');
-    setEditingMenu(null);
+    dispatch(setMenuCurrentView('list'));
+    dispatch(setEditingMenu(null));
   };
 
   const handleSaveMenu = (menuData: MenuFormData) => {
@@ -48,9 +59,7 @@ export const useMenuManagement = () => {
         }),
       };
       
-      setMenus(prev => prev.map(menu => 
-        menu.id === editingMenu.id ? updatedMenu : menu
-      ));
+      dispatch(updateMenu(updatedMenu));
     } else {
       // Create new menu
       const newMenu: Menu = {
@@ -66,28 +75,43 @@ export const useMenuManagement = () => {
         }),
       };
       
-      setMenus(prev => [newMenu, ...prev]);
+      dispatch(addMenu(newMenu));
     }
     
-    setCurrentView('list');
-    setEditingMenu(null);
+    dispatch(setMenuCurrentView('list'));
+    dispatch(setEditingMenu(null));
     console.log('Menu saved:', menuData);
   };
 
   const handleEditMenu = (id: string) => {
-    const menuToEdit = menus.find(menu => menu.id === id);
+    const menuToEdit = menus.find((menu: Menu) => menu.id === id);
     if (menuToEdit) {
-      setEditingMenu(menuToEdit);
-      setCurrentView('edit');
+      dispatch(setEditingMenu(menuToEdit));
+      dispatch(setMenuCurrentView('edit'));
     }
   };
 
   const handleDeleteMenu = (id: string) => {
-    setMenus(prev => prev.filter(menu => menu.id !== id));
+    // Find the menu to archive
+    const menuToDelete = menus.find((menu: Menu) => menu.id === id);
+    if (menuToDelete) {
+      // Add to archived items
+      dispatch(addArchivedItem({
+        id: menuToDelete.id,
+        name: menuToDelete.name,
+        itemCount: menuToDelete.itemCount,
+        status: menuToDelete.status,
+        lastModified: menuToDelete.lastModified,
+        type: 'menu',
+        deletedAt: new Date().toISOString()
+      }));
+    }
+    // Remove from menus
+    dispatch(deleteMenu(id));
   };
 
   const handleDuplicateMenu = (id: string) => {
-    const menuToDuplicate = menus.find(menu => menu.id === id);
+    const menuToDuplicate = menus.find((menu: Menu) => menu.id === id);
     if (menuToDuplicate) {
       const now = new Date();
       const duplicatedMenu: Menu = {
@@ -100,13 +124,13 @@ export const useMenuManagement = () => {
           year: 'numeric'
         }),
       };
-      setMenus(prev => [duplicatedMenu, ...prev]);
+      dispatch(addMenu(duplicatedMenu));
     }
     console.log('Duplicate menu:', id);
   };
 
   const restoreMenu = (menuData: Omit<Menu, 'id'> & { id: string }) => {
-    setMenus(prev => [menuData, ...prev]);
+    dispatch(addMenu(menuData));
   };
 
   return {
@@ -127,8 +151,8 @@ export const useMenuManagement = () => {
     // Delete operations
     ...deleteOperations,
     
-    // Setters (for external use if needed)
-    setMenus,
-    setCurrentView,
+    // Redux dispatch functions (for external use if needed)
+    setMenuCurrentView: (view: 'list' | 'add' | 'edit') => dispatch(setMenuCurrentView(view)),
+    setEditingMenu: (menu: Menu | null) => dispatch(setEditingMenu(menu)),
   };
 };

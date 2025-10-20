@@ -1,16 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import { createDashboardTheme } from '../theme/dashboardTheme';
+import { useAppDispatch, useAppSelector } from '../../../app/hooks';
+import { toggleTheme } from '../store/dashboardSlice';
 
 interface ThemeContextType {
   mode: 'light' | 'dark';
   toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const DashboardThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const useDashboardTheme = () => {
-  const context = useContext(ThemeContext);
+  const context = useContext(DashboardThemeContext);
   if (context === undefined) {
     throw new Error('useDashboardTheme must be used within a DashboardThemeProvider');
   }
@@ -22,31 +24,22 @@ interface DashboardThemeProviderProps {
 }
 
 export const DashboardThemeProvider: React.FC<DashboardThemeProviderProps> = ({ children }) => {
-  const [mode, setMode] = useState<'light' | 'dark'>(() => {
-    // Get saved theme from localStorage or default to dark
-    const savedTheme = localStorage.getItem('dashboard-theme');
-    return (savedTheme as 'light' | 'dark') || 'dark';
-  });
+  const dispatch = useAppDispatch();
+  
+  // Get theme mode from Redux store
+  const mode = useAppSelector(state => state.dashboard.ui.themeMode);
 
-  const toggleTheme = () => {
-    setMode((prevMode) => {
-      const newMode = prevMode === 'light' ? 'dark' : 'light';
-      localStorage.setItem('dashboard-theme', newMode);
-      return newMode;
-    });
+  const handleToggleTheme = () => {
+    dispatch(toggleTheme());
   };
-
-  useEffect(() => {
-    localStorage.setItem('dashboard-theme', mode);
-  }, [mode]);
 
   const theme = createDashboardTheme(mode);
 
   return (
-    <ThemeContext.Provider value={{ mode, toggleTheme }}>
+    <DashboardThemeContext.Provider value={{ mode, toggleTheme: handleToggleTheme }}>
       <ThemeProvider theme={theme}>
         {children}
       </ThemeProvider>
-    </ThemeContext.Provider>
+    </DashboardThemeContext.Provider>
   );
 };

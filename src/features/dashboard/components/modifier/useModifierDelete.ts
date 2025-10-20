@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useAppDispatch, useAppSelector } from '../../../../app/hooks';
+import { openDeleteDialog, closeDeleteDialog } from '../../store/dashboardSlice';
 
 export interface ModifierDeleteDialog {
   open: boolean;
@@ -19,38 +20,39 @@ export interface ModifierDeleteOperations {
 }
 
 export const useModifierDelete = (): ModifierDeleteOperations => {
-  const [deleteDialog, setDeleteDialog] = useState<ModifierDeleteDialog>({
-    open: false,
-    itemId: '',
-    itemName: '',
-  });
+  const dispatch = useAppDispatch();
+  
+  // Get delete dialog state from Redux
+  const deleteDialog = useAppSelector(state => ({
+    open: state.dashboard.ui.deleteDialog.open && state.dashboard.ui.deleteDialog.itemType === 'modifier',
+    itemId: state.dashboard.ui.deleteDialog.itemId,
+    itemName: state.dashboard.ui.deleteDialog.itemName,
+  }));
 
-  const openDeleteDialog = (id: string, name: string) => {
-    setDeleteDialog({
-      open: true,
+  const openModifierDeleteDialog = (id: string, name: string) => {
+    dispatch(openDeleteDialog({
       itemId: id,
       itemName: name,
-    });
+      itemType: 'modifier'
+    }));
   };
 
-  const closeDeleteDialog = () => {
-    setDeleteDialog({
-      open: false,
-      itemId: '',
-      itemName: '',
-    });
+  const closeModifierDeleteDialog = () => {
+    dispatch(closeDeleteDialog());
   };
 
   const confirmDelete = (onDelete: (id: string) => void) => {
     const { itemId } = deleteDialog;
-    onDelete(itemId);
-    closeDeleteDialog();
+    if (itemId) {
+      onDelete(itemId);
+      dispatch(closeDeleteDialog());
+    }
   };
 
   return {
     deleteDialog,
-    openDeleteDialog,
-    closeDeleteDialog,
+    openDeleteDialog: openModifierDeleteDialog,
+    closeDeleteDialog: closeModifierDeleteDialog,
     confirmDelete,
   };
 };

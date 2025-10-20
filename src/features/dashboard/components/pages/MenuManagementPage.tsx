@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   Box,
   Typography,
@@ -18,16 +18,25 @@ import {
   ChevronRight,
 } from '@mui/icons-material';
 import { useDashboardTheme } from '../../context/ThemeContext';
+import { useAppDispatch, useAppSelector } from '../../../../app/hooks';
+import { 
+  setActiveTab,
+  setModifierCurrentView, 
+  openPermanentDeleteDialog,
+  closePermanentDeleteDialog
+} from '../../store/dashboardSlice';
 import { AddMenuForm, MenuCard, MenuEmptyState, AddNewMenuCard, useMenuManagement } from '../menu';
 import { AddModifierForm, AddModifierFormRef, ModifierDeleteConfirmationDialog, ModifierCard, ModifierEmptyState, useModifierManagement } from '../modifier';
 import MenuDeleteConfirmationDialog from '../menu/DeleteConfirmationDialog';
-import { ArchivedItemsList, useArchivedItems, PermanentDeleteDialog } from '../archived';
+import { ArchivedItemsList, useArchivedItems, PermanentDeleteDialog, ArchivedItem } from '../archived';
 
 const MenuManagementPage: React.FC = () => {
   const theme = useTheme();
   const { mode } = useDashboardTheme();
-  const [activeTab, setActiveTab] = useState(0);
-  const [currentView, setCurrentView] = useState<'list' | 'addModifier'>('list');
+  const dispatch = useAppDispatch();
+  
+  // Get state from Redux store
+  const activeTab = useAppSelector(state => state.dashboard.ui.activeTab);
   const addModifierFormRef = useRef<AddModifierFormRef>(null);
   
   // Use menu management hook
@@ -48,80 +57,53 @@ const MenuManagementPage: React.FC = () => {
     closeDeleteDialog: closeMenuDeleteDialog,
     confirmDelete: confirmMenuDelete
   } = useMenuManagement();
-  const [modifierDeleteDialog, setModifierDeleteDialog] = useState<{
-    open: boolean;
-    itemId: string;
-    itemName: string;
-  }>({
-    open: false,
-    itemId: '',
-    itemName: '',
-  });
 
-  const [permanentDeleteDialog, setPermanentDeleteDialog] = useState<{
-    open: boolean;
-    itemId: string;
-    itemName: string;
-    itemType: 'menu' | 'modifier';
-  }>({
-    open: false,
-    itemId: '',
-    itemName: '',
-    itemType: 'menu',
-  });
+  // Get permanent delete dialog state from Redux
+  const permanentDeleteDialog = useAppSelector(state => ({
+    open: state.dashboard.ui.permanentDeleteDialog?.open || false,
+    itemId: state.dashboard.ui.permanentDeleteDialog?.itemId || '',
+    itemName: state.dashboard.ui.permanentDeleteDialog?.itemName || '',
+    itemType: 'menu' as const, // MenuManagementPage only handles menus
+  }));
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
+    dispatch(setActiveTab(newValue));
     
     // Reset all form states when switching tabs
     if (menuCurrentView !== 'list') {
       handleBackToMenuList(); // Reset menu form state
     }
-    if (currentView !== 'list') {
-      setCurrentView('list'); // Reset modifier form state
+    if (modifierCurrentView !== 'list') {
+      dispatch(setModifierCurrentView('list')); // Reset modifier form state
     }
   };
   const handleEdit = (id: string) => {
-    if (activeTab === 0) {
-      handleEditMenu(id);
-    } else {
-      handleModifierEdit(id);
-    }
+    handleEditMenu(id);
   };
 
   const handleDelete = (id: string) => {
-    const currentData = getCurrentData();
-    const item = currentData.find(item => item.id === id);
-    if (item) {
-      if (activeTab === 0) {
-        // Menu delete
-        openMenuDeleteDialog(id, item.name);
-      } else {
-        // Modifier delete
-        setModifierDeleteDialog({
-          open: true,
-          itemId: id,
-          itemName: item.name,
-        });
-      }
+    const menu = menus.find((menu: any) => menu.id === id);
+    if (menu) {
+      openMenuDeleteDialog(id, menu.name);
+    }
+  };
+
+  const handleModifierDeleteClick = (id: string) => {
+    const modifier = modifiers.find((modifier: any) => modifier.id === id);
+    if (modifier) {
+      openModifierDeleteDialog(id, modifier.name);
     }
   };
 
   const handleMenuDeleteConfirm = () => {
     confirmMenuDelete(
-      handleDeleteMenu,
-      (menu) => addArchivedItem({ ...menu, type: 'menu' })
+      handleDeleteMenu
+      // handleDeleteMenu zaten archive'a ekliyor, callback'e gerek yok
     );
   };
 
   const handleModifierDeleteConfirm = () => {
-    const { itemId } = modifierDeleteDialog;
-    handleModifierDelete(itemId);
-    setModifierDeleteDialog({
-      open: false,
-      itemId: '',
-      itemName: '',
-    });
+    confirmModifierDelete(handleModifierDelete);
   };
 
   const handleMenuDeleteCancel = () => {
@@ -129,62 +111,40 @@ const MenuManagementPage: React.FC = () => {
   };
 
   const handleModifierDeleteCancel = () => {
-    setModifierDeleteDialog({
-      open: false,
-      itemId: '',
-      itemName: '',
-    });
+    closeModifierDeleteDialog();
   };
 
   const handleDuplicate = (id: string) => {
-    if (activeTab === 0) {
-      handleDuplicateMenu(id);
-    } else {
-      handleModifierDuplicate(id);
-    }
+    handleDuplicateMenu(id);
   };
 
   const handleRestore = (id: string) => {
     const restoredItem = restoreArchivedItem(id);
     if (restoredItem) {
-      if (restoredItem.type === 'menu') {
-        const { type, deletedAt, ...menuData } = restoredItem;
-        restoreMenu(menuData);
-      } else {
-        restoreModifier(restoredItem);
-      }
+      // Sadece menu restore edilebilir
+      const { type, deletedAt, ...menuData } = restoredItem;
+      restoreMenu(menuData);
     }
   };
 
   const handlePermanentDelete = (id: string) => {
-    const item = archivedItems.find(item => item.id === id);
+    const item = archivedItems.find((item: any) => item.id === id);
     if (item) {
-      setPermanentDeleteDialog({
-        open: true,
+      dispatch(openPermanentDeleteDialog({
         itemId: id,
         itemName: item.name,
         itemType: item.type,
-      });
+      }));
     }
   };
 
   const handlePermanentDeleteConfirm = () => {
     permanentlyDeleteItem(permanentDeleteDialog.itemId);
-    setPermanentDeleteDialog({
-      open: false,
-      itemId: '',
-      itemName: '',
-      itemType: 'menu',
-    });
+    dispatch(closePermanentDeleteDialog());
   };
 
   const handlePermanentDeleteCancel = () => {
-    setPermanentDeleteDialog({
-      open: false,
-      itemId: '',
-      itemName: '',
-      itemType: 'menu',
-    });
+    dispatch(closePermanentDeleteDialog());
   };
 
   const handleOpenCustomerApp = () => {
@@ -203,7 +163,7 @@ const MenuManagementPage: React.FC = () => {
     if (menuCurrentView !== 'list') {
       handleBackToMenuList();
     } else {
-      setCurrentView('list');
+      dispatch(setModifierCurrentView('list'));
     }
   };
 
@@ -220,17 +180,21 @@ const MenuManagementPage: React.FC = () => {
     handleDelete: handleModifierDelete, 
     handleDuplicate: handleModifierDuplicate, 
     handleSaveModifier, 
-    restoreModifier 
+    // Delete operations from useModifierDelete
+    deleteDialog: modifierDeleteDialogFromHook,
+    openDeleteDialog: openModifierDeleteDialog,
+    closeDeleteDialog: closeModifierDeleteDialog,
+    confirmDelete: confirmModifierDelete
   } = useModifierManagement();
   
   // Use archived items hook
-  const { items: archivedItems, addArchivedItem, restoreArchivedItem, permanentlyDeleteItem } = useArchivedItems();
+  const { items: archivedItems, restoreArchivedItem, permanentlyDeleteItem } = useArchivedItems();
 
   const getCurrentData = () => {
     switch (activeTab) {
       case 0: return menus;
       case 1: return modifiers;
-      case 2: return archivedItems;
+      case 2: return archivedItems.filter((item: ArchivedItem) => item.type === 'menu');
       default: return menus;
     }
   };
@@ -619,7 +583,7 @@ const MenuManagementPage: React.FC = () => {
                   key={item.id}
                   {...item}
                   onEdit={handleModifierEdit}
-                  onDelete={handleDelete}
+                  onDelete={handleModifierDeleteClick}
                   onDuplicate={handleModifierDuplicate}
                 />
               ))}
@@ -641,6 +605,11 @@ const MenuManagementPage: React.FC = () => {
                 maxWidth: '1400px',
               }}
             >
+              {/* Add New Menu Card - Always visible first when there are items */}
+              {getCurrentData().length > 0 && (
+                <AddNewMenuCard onClick={handleAddNewMenu} />
+              )}
+              
               {getCurrentData().map((item: any) => (
                 <MenuCard
                   key={item.id}
@@ -648,13 +617,9 @@ const MenuManagementPage: React.FC = () => {
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onDuplicate={handleDuplicate}
+                  disableNavigation={false}
                 />
               ))}
-              
-              {/* Add New Menu Card - Always visible when there are items */}
-              {getCurrentData().length > 0 && (
-                <AddNewMenuCard onClick={handleAddNewMenu} />
-              )}
             </Box>
           )}
           {/* Empty State for Menus only */}
@@ -679,10 +644,10 @@ const MenuManagementPage: React.FC = () => {
       />
       
       <ModifierDeleteConfirmationDialog
-        open={modifierDeleteDialog.open}
+        open={modifierDeleteDialogFromHook.open}
         onClose={handleModifierDeleteCancel}
         onConfirm={handleModifierDeleteConfirm}
-        itemName={modifierDeleteDialog.itemName}
+        itemName={modifierDeleteDialogFromHook.itemName}
         itemType="modifier"
       />
 

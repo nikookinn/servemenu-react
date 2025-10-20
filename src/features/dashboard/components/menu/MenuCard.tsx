@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
@@ -28,6 +29,7 @@ interface MenuCardProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
+  disableNavigation?: boolean; // Optional prop to disable navigation
 }
 
 const MenuCard: React.FC<MenuCardProps> = ({
@@ -39,13 +41,25 @@ const MenuCard: React.FC<MenuCardProps> = ({
   onEdit,
   onDelete,
   onDuplicate,
+  disableNavigation = false,
 }) => {
   const theme = useTheme();
   const { mode } = useDashboardTheme();
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
     setAnchorEl(event.currentTarget);
+  };
+
+
+  const handleCardClick = () => {
+    // Don't navigate if navigation is disabled or menu is open
+    if (disableNavigation || anchorEl) {
+      return;
+    }
+    navigate(`/dashboard/menus/${id}`);
   };
 
   const handleMenuClose = () => {
@@ -63,6 +77,7 @@ const MenuCard: React.FC<MenuCardProps> = ({
 
   return (
     <Card
+      onClick={handleCardClick}
       sx={{
         height: '240px', // Daha kompakt yükseklik
         minHeight: '240px', // Minimum yükseklik garantisi
@@ -74,6 +89,7 @@ const MenuCard: React.FC<MenuCardProps> = ({
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
+        cursor: 'pointer',
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: mode === 'dark'

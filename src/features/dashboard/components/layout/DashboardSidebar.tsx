@@ -362,62 +362,76 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ open, collapsed, on
 
   const drawerWidth = collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH;
 
+  // Mobile için Drawer, Desktop için Fixed Box
+  if (isMobile) {
+    return (
+      <Drawer
+        variant="temporary"
+        open={open}
+        onClose={onClose}
+        ModalProps={{
+          keepMounted: true,
+        }}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: DRAWER_WIDTH,
+            boxSizing: 'border-box',
+            background: mode === 'dark'
+              ? 'linear-gradient(180deg, #111111 0%, #0a0a0a 100%)'
+              : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+            borderRight: `1px solid ${theme.palette.divider}`,
+            backdropFilter: 'blur(20px)',
+          },
+        }}
+      >
+        {isMobile && (
+          <Box sx={{ 
+            p: 2, 
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            background: mode === 'dark'
+              ? 'rgba(99, 102, 241, 0.05)'
+              : 'rgba(79, 70, 229, 0.03)',
+          }}>
+            <Typography variant="h6" sx={{ 
+              fontWeight: 700,
+              color: theme.palette.primary.main,
+              textAlign: 'center'
+            }}>
+              ServeMenu
+            </Typography>
+          </Box>
+        )}
+        {drawerContent}
+      </Drawer>
+    );
+  }
+
+  // Desktop için Fixed Box (MUI Drawer yerine)
   return (
-    <Drawer
-      variant={isMobile ? "temporary" : "permanent"}
-      open={isMobile ? open : true}
-      onClose={isMobile ? onClose : undefined}
-      ModalProps={{
-        keepMounted: true, // Better open performance on mobile
-      }}
+    <Box
       sx={{
-        width: isMobile ? DRAWER_WIDTH : drawerWidth,
-        flexShrink: 0,
-        display: { xs: 'block' },
+        position: 'fixed', // GERÇEK FIXED POSITION!
+        top: 64, // Navbar altında
+        left: 0,
+        width: drawerWidth,
+        height: 'calc(100vh - 64px)',
+        background: mode === 'dark'
+          ? 'linear-gradient(180deg, #111111 0%, #0a0a0a 100%)'
+          : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+        borderRight: `1px solid ${theme.palette.divider}`,
+        backdropFilter: 'blur(20px)',
         transition: theme.transitions.create(['width'], {
           easing: theme.transitions.easing.sharp,
           duration: theme.transitions.duration.enteringScreen,
         }),
-        '& .MuiDrawer-paper': {
-          width: isMobile ? DRAWER_WIDTH : drawerWidth,
-          boxSizing: 'border-box',
-          background: mode === 'dark'
-            ? 'linear-gradient(180deg, #111111 0%, #0a0a0a 100%)'
-            : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-          borderRight: `1px solid ${theme.palette.divider}`,
-          backdropFilter: 'blur(20px)',
-          transition: theme.transitions.create(['width'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          overflowX: 'hidden',
-          overflowY: 'auto',
-          top: isMobile ? 0 : 64, // Mobile'da full height, desktop'ta navbar altında
-          height: isMobile ? '100vh' : 'calc(100vh - 64px)', // Mobile'da full height
-          zIndex: isMobile ? theme.zIndex.drawer : 'auto',
-        },
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        zIndex: theme.zIndex.drawer - 1,
+        boxSizing: 'border-box',
       }}
     >
-      {isMobile && (
-        // Mobile header
-        <Box sx={{ 
-          p: 2, 
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          background: mode === 'dark'
-            ? 'rgba(99, 102, 241, 0.05)'
-            : 'rgba(79, 70, 229, 0.03)',
-        }}>
-          <Typography variant="h6" sx={{ 
-            fontWeight: 700,
-            color: theme.palette.primary.main,
-            textAlign: 'center'
-          }}>
-            ServeMenu
-          </Typography>
-        </Box>
-      )}
       {drawerContent}
-    </Drawer>
+    </Box>
   );
 };
 

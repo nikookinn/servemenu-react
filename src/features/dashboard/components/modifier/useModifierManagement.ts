@@ -1,61 +1,56 @@
-import { useState } from 'react';
+import { useAppDispatch, useAppSelector } from '../../../../app/hooks';
+import { 
+  addModifier, 
+  updateModifier, 
+  deleteModifier, 
+  setModifierCurrentView,
+  setEditingModifier
+} from '../../store/dashboardSlice';
 import { useModifierDelete } from './useModifierDelete';
 
-interface ModifierData {
+export interface ModifierOption {
   id: string;
   name: string;
-  type?: 'optional' | 'required';
-  allowMultiple?: boolean;
-  options?: any[];
-  itemCount: number;
-  status: 'active' | 'inactive' | 'draft';
-  lastModified: string;
+  price: number;
+  unit?: string;
 }
 
-interface ModifierFormData {
+export interface ModifierData {
+  id: string;
   name: string;
   type: 'optional' | 'required';
   allowMultiple: boolean;
-  options: any[];
+  options: ModifierOption[];
+}
+
+export interface ModifierFormData {
+  name: string;
+  type: 'optional' | 'required';
+  allowMultiple: boolean;
+  options: ModifierOption[];
 }
 
 export const useModifierManagement = () => {
-  const [modifiers, setModifiers] = useState<ModifierData[]>([]);
-  const [currentView, setCurrentView] = useState<'list' | 'add' | 'edit'>('list');
-  const [editingModifier, setEditingModifier] = useState<ModifierData | null>(null);
+  const dispatch = useAppDispatch();
+  
+  // Get all state from Redux store
+  const modifiers = useAppSelector(state => state.dashboard.modifiers);
+  const currentView = useAppSelector(state => state.dashboard.ui.modifierCurrentView);
+  const editingModifier = useAppSelector(state => state.dashboard.ui.editingModifier);
   
   // Delete functionality
   const deleteOperations = useModifierDelete();
 
-  const handleEdit = (id: string) => {
-    const modifierToEdit = modifiers.find(modifier => modifier.id === id);
-    if (modifierToEdit) {
-      setEditingModifier(modifierToEdit);
-      setCurrentView('edit');
-    }
-  };
-
-  const handleDelete = (id: string) => {
-    // Modifier'lar kalıcı olarak silinir (archived'a gitmez)
-    setModifiers(prev => prev.filter(modifier => modifier.id !== id));
-  };
-
-  const handleDuplicate = (id: string) => {
-    console.log('Duplicate modifier:', id);
-  };
-
   const handleAddNewModifier = () => {
-    setCurrentView('add');
+    dispatch(setModifierCurrentView('add'));
   };
 
   const handleBackToList = () => {
-    setCurrentView('list');
-    setEditingModifier(null);
+    dispatch(setModifierCurrentView('list'));
+    dispatch(setEditingModifier(null));
   };
 
   const handleSaveModifier = (modifierData: ModifierFormData) => {
-    const now = new Date();
-    
     if (editingModifier) {
       // Update existing modifier
       const updatedModifier: ModifierData = {
@@ -64,17 +59,9 @@ export const useModifierManagement = () => {
         type: modifierData.type,
         allowMultiple: modifierData.allowMultiple,
         options: modifierData.options,
-        itemCount: modifierData.options.length,
-        lastModified: now.toLocaleDateString('tr-TR', {
-          day: '2-digit',
-          month: '2-digit', 
-          year: 'numeric'
-        }),
       };
       
-      setModifiers(prev => prev.map(modifier => 
-        modifier.id === editingModifier.id ? updatedModifier : modifier
-      ));
+      dispatch(updateModifier(updatedModifier));
     } else {
       // Create new modifier
       const newModifier: ModifierData = {
@@ -83,41 +70,67 @@ export const useModifierManagement = () => {
         type: modifierData.type,
         allowMultiple: modifierData.allowMultiple,
         options: modifierData.options,
-        itemCount: modifierData.options.length,
-        status: 'active' as const,
-        lastModified: now.toLocaleDateString('tr-TR', {
-          day: '2-digit',
-          month: '2-digit', 
-          year: 'numeric'
-        }),
       };
       
-      setModifiers(prev => [newModifier, ...prev]);
+      dispatch(addModifier(newModifier));
     }
     
-    setCurrentView('list');
-    setEditingModifier(null);
+    dispatch(setModifierCurrentView('list'));
+    dispatch(setEditingModifier(null));
     console.log('Modifier saved:', modifierData);
   };
 
-  const restoreModifier = (modifierData: any) => {
-    const { type, deletedAt, ...cleanModifierData } = modifierData;
-    setModifiers(prev => [cleanModifierData, ...prev]);
+  const handleEdit = (id: string) => {
+    const modifierToEdit = modifiers.find((modifier: ModifierData) => modifier.id === id);
+    if (modifierToEdit) {
+      dispatch(setEditingModifier(modifierToEdit));
+      dispatch(setModifierCurrentView('edit'));
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    // Modifier'lar direkt silinir, archive'a gitmez
+    // Sadece aktif listeden kaldır
+    dispatch(deleteModifier(id));
+  };
+
+  const handleDuplicate = (id: string) => {
+    const modifierToDuplicate = modifiers.find((modifier: ModifierData) => modifier.id === id);
+    if (modifierToDuplicate) {
+      const duplicatedModifier: ModifierData = {
+        ...modifierToDuplicate,
+        id: Date.now().toString(),
+        name: `${modifierToDuplicate.name} (Copy)`,
+      };
+      dispatch(addModifier(duplicatedModifier));
+    }
+    console.log('Duplicate modifier:', id);
+  };
+
+  const restoreModifier = (modifierData: Omit<ModifierData, 'id'> & { id: string }) => {
+    dispatch(addModifier(modifierData));
   };
 
   return {
+    // State
     modifiers,
     currentView,
     editingModifier,
+    
+    // Actions
     handleAddNewModifier,
     handleBackToList,
+    handleSaveModifier,
     handleEdit,
     handleDelete,
     handleDuplicate,
-    handleSaveModifier,
     restoreModifier,
     
     // Delete operations
     ...deleteOperations,
+    
+    // Redux dispatch functions (for external use if needed)
+    setModifierCurrentView: (view: 'list' | 'add' | 'edit') => dispatch(setModifierCurrentView(view)),
+    setEditingModifier: (modifier: ModifierData | null) => dispatch(setEditingModifier(modifier)),
   };
 };

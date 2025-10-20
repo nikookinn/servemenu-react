@@ -1,4 +1,4 @@
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useImperativeHandle, forwardRef, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -32,6 +32,31 @@ const AddMenuForm = forwardRef<AddMenuFormRef, AddMenuFormProps>(({ onSave, edit
     name: '',
     description: '',
   });
+
+  // Update form data when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        description: initialData.description || '',
+      });
+      // Clear any existing errors when switching to edit mode
+      setErrors({
+        name: '',
+        description: '',
+      });
+    } else {
+      // Reset form when switching back to add mode
+      setFormData({
+        name: '',
+        description: '',
+      });
+      setErrors({
+        name: '',
+        description: '',
+      });
+    }
+  }, [initialData, editMode]);
 
   const handleInputChange = (field: 'name' | 'description') => (
     event: React.ChangeEvent<HTMLInputElement>

@@ -11,22 +11,12 @@ import {
 } from '@mui/material';
 import {
   MenuBook,
-  Tune,
   Delete,
   Restore,
   Archive,
 } from '@mui/icons-material';
 import { useDashboardTheme } from '../../context/ThemeContext';
-
-interface ArchivedItem {
-  id: string;
-  name: string;
-  itemCount: number;
-  status: 'active' | 'inactive' | 'draft';
-  lastModified: string;
-  type: 'menu' | 'modifier';
-  deletedAt: string;
-}
+import { ArchivedItem } from '../../store/dashboardSlice';
 
 interface ArchivedItemsListProps {
   items: ArchivedItem[];
@@ -154,23 +144,13 @@ const ArchivedItemsList: React.FC<ArchivedItemsListProps> = ({
                 flexShrink: 0,
               }}
             >
-              {item.type === 'menu' ? (
-                <MenuBook
-                  sx={{
-                    fontSize: 28,
-                    color: theme.palette.primary.main,
-                    opacity: 0.7,
-                  }}
-                />
-              ) : (
-                <Tune
-                  sx={{
-                    fontSize: 28,
-                    color: theme.palette.primary.main,
-                    opacity: 0.7,
-                  }}
-                />
-              )}
+              <MenuBook
+                sx={{
+                  fontSize: 28,
+                  color: theme.palette.primary.main,
+                  opacity: 0.7,
+                }}
+              />
             </Box>
 
             {/* Info - CSS Grid Layout */}
@@ -228,7 +208,7 @@ const ArchivedItemsList: React.FC<ArchivedItemsListProps> = ({
                     fontSize: { xs: '0.875rem', md: '0.875rem' },
                   }}
                 >
-                  {item.type === 'menu' ? 'Menu' : 'Modifier'} • {item.itemCount} items
+                  Menu • {item.itemCount} items
                 </Typography>
               </Box>
 

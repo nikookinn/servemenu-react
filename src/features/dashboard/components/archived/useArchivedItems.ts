@@ -1,72 +1,42 @@
-import { useState, useCallback } from 'react';
-import { ArchivedItem, ArchivedItemsState, ArchivedItemsActions } from './types';
+import { useAppDispatch, useAppSelector } from '../../../../app/hooks';
+import { 
+  addArchivedItem as addArchivedItemAction, 
+  restoreArchivedItem as restoreArchivedItemAction, 
+  permanentlyDeleteArchivedItem 
+} from '../../store/dashboardSlice';
+import { ArchivedItem } from '../../store/dashboardSlice';
 
-interface UseArchivedItemsReturn extends ArchivedItemsState, ArchivedItemsActions {}
+export const useArchivedItems = () => {
+  const dispatch = useAppDispatch();
+  
+  // Get archived items from Redux store
+  const items = useAppSelector(state => state.dashboard.archivedItems);
 
-export const useArchivedItems = (): UseArchivedItemsReturn => {
-  const [state, setState] = useState<ArchivedItemsState>({
-    items: [],
-    loading: false,
-    error: null,
-  });
-
-  const addArchivedItem = useCallback((item: Omit<ArchivedItem, 'deletedAt'>) => {
+  const addArchivedItem = (item: Omit<ArchivedItem, 'deletedAt'>) => {
     const archivedItem: ArchivedItem = {
       ...item,
       deletedAt: new Date().toISOString(),
     };
+    dispatch(addArchivedItemAction(archivedItem));
+  };
 
-    setState(prev => ({
-      ...prev,
-      items: [archivedItem, ...prev.items],
-    }));
-  }, []);
+  const restoreArchivedItem = (id: string) => {
+    const itemToRestore = items.find((item: ArchivedItem) => item.id === id);
+    if (itemToRestore) {
+      dispatch(restoreArchivedItemAction(id));
+      return itemToRestore;
+    }
+    return null;
+  };
 
-  const restoreArchivedItem = useCallback((id: string): ArchivedItem | null => {
-    let restoredItem: ArchivedItem | null = null;
-
-    setState(prev => {
-      const item = prev.items.find(item => item.id === id);
-      if (item) {
-        restoredItem = item;
-        return {
-          ...prev,
-          items: prev.items.filter(item => item.id !== id),
-        };
-      }
-      return prev;
-    });
-
-    return restoredItem;
-  }, []);
-
-  const removeArchivedItem = useCallback((id: string) => {
-    setState(prev => ({
-      ...prev,
-      items: prev.items.filter(item => item.id !== id),
-    }));
-  }, []);
-
-  const permanentlyDeleteItem = useCallback((id: string) => {
-    setState(prev => ({
-      ...prev,
-      items: prev.items.filter(item => item.id !== id),
-    }));
-  }, []);
-
-  const clearArchivedItems = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      items: [],
-    }));
-  }, []);
+  const permanentlyDeleteItem = (id: string) => {
+    dispatch(permanentlyDeleteArchivedItem(id));
+  };
 
   return {
-    ...state,
+    items,
     addArchivedItem,
     restoreArchivedItem,
-    removeArchivedItem,
     permanentlyDeleteItem,
-    clearArchivedItems,
   };
 };

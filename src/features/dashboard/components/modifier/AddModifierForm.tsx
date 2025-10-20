@@ -18,12 +18,14 @@ import {
   Delete,
 } from '@mui/icons-material';
 import { useDashboardTheme } from '../../context/ThemeContext';
+import { ModifierOption as ModifierOptionData } from './useModifierManagement';
 
-interface ModifierOption {
+// Local interface for form handling (prices as strings for inputs)
+interface FormModifierOption {
   id: string;
   name: string;
   price: string;
-  unit: string;
+  unit?: string;
 }
 
 interface AddModifierFormProps {
@@ -31,14 +33,14 @@ interface AddModifierFormProps {
     name: string;
     type: 'optional' | 'required';
     allowMultiple: boolean;
-    options: ModifierOption[];
+    options: ModifierOptionData[];
   }) => void;
   editMode?: boolean;
   initialData?: {
     name: string;
     type: 'optional' | 'required';
     allowMultiple: boolean;
-    options: ModifierOption[];
+    options: ModifierOptionData[];
   };
 }
 
@@ -54,9 +56,9 @@ const AddModifierForm = forwardRef<AddModifierFormRef, AddModifierFormProps>(({ 
     type: initialData?.type || 'optional' as 'optional' | 'required',
     allowMultiple: initialData?.allowMultiple || false,
   });
-  const [options, setOptions] = useState<ModifierOption[]>(
+  const [options, setOptions] = useState<FormModifierOption[]>(
     initialData?.options && initialData.options.length > 0 
-      ? initialData.options 
+      ? initialData.options.map(opt => ({ ...opt, price: opt.price.toString(), unit: opt.unit || '' }))
       : [{ id: '1', name: '', price: '', unit: '' }]
   );
   const [errors, setErrors] = useState({
@@ -82,7 +84,7 @@ const AddModifierForm = forwardRef<AddModifierFormRef, AddModifierFormProps>(({ 
     }
   };
 
-  const handleOptionChange = (optionId: string, field: keyof ModifierOption, value: string) => {
+  const handleOptionChange = (optionId: string, field: keyof FormModifierOption, value: string) => {
     setOptions(prev => prev.map(option => 
       option.id === optionId ? { ...option, [field]: value } : option
     ));
@@ -94,7 +96,7 @@ const AddModifierForm = forwardRef<AddModifierFormRef, AddModifierFormProps>(({ 
   };
 
   const addNewOption = () => {
-    const newOption: ModifierOption = {
+    const newOption: FormModifierOption = {
       id: Date.now().toString(),
       name: '',
       price: '',
@@ -117,7 +119,7 @@ const AddModifierForm = forwardRef<AddModifierFormRef, AddModifierFormProps>(({ 
     }
     
     const validOptions = options.filter(option => 
-      option.name.trim() && option.price.trim() && option.unit.trim()
+      option.name.trim() && option.price.trim() && (option.unit || '').trim()
     );
     
     if (validOptions.length === 0) {
@@ -131,14 +133,22 @@ const AddModifierForm = forwardRef<AddModifierFormRef, AddModifierFormProps>(({ 
   const handleSave = () => {
     if (validateForm()) {
       const validOptions = options.filter(option => 
-        option.name.trim() && option.price.trim() && option.unit.trim()
+        option.name.trim() && option.price.trim() && (option.unit || '').trim()
       );
+      
+      // Convert form data to the expected data format
+      const convertedOptions: ModifierOptionData[] = validOptions.map(option => ({
+        id: option.id,
+        name: option.name,
+        price: parseFloat(option.price) || 0,
+        unit: option.unit || undefined
+      }));
       
       onSave({
         name: formData.name,
         type: formData.type,
         allowMultiple: formData.allowMultiple,
-        options: validOptions,
+        options: convertedOptions,
       });
     }
   };

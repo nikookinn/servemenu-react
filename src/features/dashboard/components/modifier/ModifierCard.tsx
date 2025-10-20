@@ -140,7 +140,7 @@ const ModifierCard: React.FC<ModifierCardProps> = ({
           {/* Status Column */}
           <Box>
             <Chip
-              label={status.charAt(0).toUpperCase() + status.slice(1)}
+              label={status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'}
               size="small"
               sx={{
                 backgroundColor: getStatusColor(),
